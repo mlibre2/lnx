@@ -55,8 +55,8 @@ REMOTE_HOST="192.168.0.198"
 
 REMOTE_DESK="Desktop/$BACKUP_DIR/"
 
-REMOTE_PATH="/C:/Users/$REMOTE_USER/$REMOTE_DESK/"
-# REMOTE_PATH="/E:/$REMOTE_USER/$REMOTE_DESK/"
+REMOTE_PATH="/C:/Users/$REMOTE_USER/$REMOTE_DESK"
+# REMOTE_PATH="/E:/$REMOTE_USER/$REMOTE_DESK"
 
 ## Generar manualmente con la clave del usuario windows (se borra una vez encriptada)
 WINDOWS_PASS_FILE="pass_win.txt"
@@ -227,14 +227,16 @@ fi
 if $EXECUTE_TRANSFER; then
     log "Iniciando transferencia a ${REMOTE_USER}@${REMOTE_HOST}..."
     
-    ## Primero crear el directorio remoto si no existe
+    ## Primero verificar si el directorio remoto existe, si no existe, crearlo
     if ! sshpass -p "$windows_password" ssh -o StrictHostKeyChecking=no \
                                           -o ConnectTimeout=10 \
                                           "${REMOTE_USER}@${REMOTE_HOST}" \
-                                          "mkdir \"${REMOTE_DESK}\"" >> "$LOG_FILE" 2>&1; then
+                                          "if not exist \"${REMOTE_DESK}\" mkdir \"${REMOTE_DESK}\"" >> "$LOG_FILE" 2>&1; then
         EXECUTE_TRANSFER=false
-        log "ERROR: No se pudo crear el directorio remoto ${REMOTE_PATH}"
+        log "ERROR: No se pudo verificar/crear el directorio remoto ${REMOTE_DESK}"
         #exit 1
+    else
+        log "Directorio remoto verificado/creado correctamente: ${REMOTE_DESK}"
     fi
     
     ## Luego realizar la transferencia
