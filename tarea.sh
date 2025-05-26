@@ -40,7 +40,7 @@ PASS_FILE="pass_gz.txt"
 ## Variable global para control de ejecución (habilitar envio de archivos "encriptados" a windows)
 EXECUTE_TRANSFER=true
 
-## Acceso remoto a Windows
+## Acceso remoto a Windows (requerido OpenSSH-Win32...)
 REMOTE_USER="Soporte"
 # REMOTE_USER="Inf2"
 
