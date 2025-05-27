@@ -15,14 +15,20 @@ ROTATION_DAYS=30  # Conservar backups por 30 días
 TIMESTAMP=$(date +"%d-%m-%Y_%H%M%S")
 BACKUP_FILE="${DB_NAME}_${TIMESTAMP}.sql"
 
-## Realizar el respaldo de la BD.
-export PGPASSWORD="$DB_PASSWORD"
 echo "Respaldando la base de datos '$DB_NAME'..."
-pg_dump -U "$DB_OWNER" -h 127.0.0.1 --no-owner --no-acl "$DB_NAME" > "$BACKUP_FILE"
-unset PGPASSWORD
 
-## Simulaciion del respaldo para pruebas....
-# echo "prueba ${TIMESTAMP}" > "${BACKUP_FILE}"
+## Probar con con archivo o con la base de datos
+RUN_TEST=false
+
+if $RUN_TEST; then
+    ## Simulaciion del respaldo para pruebas....
+    echo "prueba ${TIMESTAMP}" > "${BACKUP_FILE}"
+else
+    ## Realizar el respaldo de la BD.
+    export PGPASSWORD="$DB_PASSWORD"
+    pg_dump -U "$DB_OWNER" -h 127.0.0.1 --no-owner --no-acl "$DB_NAME" > "$BACKUP_FILE"
+    unset PGPASSWORD
+fi
 
 ## Clave autogenerada con encriptado OpenSSL para abrir archivos GPG
 ##
@@ -39,7 +45,7 @@ PASS_FILE="pass_gz.txt"
 ## Nombre del archivo encriptado
 ENCRYPTED_FILE="${BACKUP_FILE}.gz.gpg"
 
-## Variable global para control de ejecución (habilitar envio de archivos "encriptados" a windows)
+## Habilitar envio remoto de archivos "encriptados" a windows
 EXECUTE_TRANSFER=true
 
 ## Acceso remoto a Windows (requerido OpenSSH-Win...)
@@ -87,16 +93,24 @@ log() {
     echo "[$(date '+%H:%M:%S')] $1" >> "$LOG_FILE"
 }
 
-## Función para rotar backups antiguos
+## Función para rotar backups/logs antiguos
 rotate_old_backups() {
-    log "Iniciando rotación de backups antiguos (más de $ROTATION_DAYS días)..."
+    log "Iniciando rotación de backups/logs antiguos (más de $ROTATION_DAYS días)..."
     
     ## Rotación local
     if [ -d "$BACKUP_DIR" ]; then
         find "$BACKUP_DIR" -name "${DB_NAME}_*.sql.gz.gpg" -type f -mtime +$ROTATION_DAYS -exec rm -v {} \; >> "$LOG_FILE" 2>&1
-        log "Rotación local completada"
+        log "Rotación local completada $BACKUP_DIR"
     else
         log "No se encontró directorio local $BACKUP_DIR para rotación"
+    fi
+
+    ## Rotación logs
+    if [ -d "$LOG_DIR" ]; then
+        find "$LOG_DIR" -name "*.log" -type f -mtime +$ROTATION_DAYS -exec rm -v {} \; >> "$LOG_FILE" 2>&1
+        log "Rotación local completada $LOG_DIR"
+    else
+        log "No se encontró directorio local $LOG_DIR para rotación"
     fi
 }
 
