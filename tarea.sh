@@ -16,14 +16,13 @@ TIMESTAMP=$(date +"%d-%m-%Y_%H%M%S")
 BACKUP_FILE="${DB_NAME}_${TIMESTAMP}.sql"
 
 ## Realizar el respaldo de la BD.
-# export PGPASSWORD="$DB_PASSWORD"
+export PGPASSWORD="$DB_PASSWORD"
 echo "Respaldando la base de datos '$DB_NAME'..."
-# pg_dump -U "$DB_OWNER" -h 127.0.0.1 --no-owner --no-acl "$DB_NAME" > "$BACKUP_FILE"
-# unset PGPASSWORD
+pg_dump -U "$DB_OWNER" -h 127.0.0.1 --no-owner --no-acl "$DB_NAME" > "$BACKUP_FILE"
+unset PGPASSWORD
 
 ## Simulaciion del respaldo para pruebas....
-
-echo "prueba ${TIMESTAMP}" > "${BACKUP_FILE}"
+# echo "prueba ${TIMESTAMP}" > "${BACKUP_FILE}"
 
 ENCRYPTED_FILE="${BACKUP_FILE}.gz.gpg"
 
@@ -44,7 +43,7 @@ EXECUTE_TRANSFER=true
 
 ## Acceso remoto a Windows (requerido OpenSSH-Win...)
 ## PC production
-# REMOTE_HOST="172.168.1.3"
+REMOTE_HOST="172.168.1.3"
 REMOTE_USER="Soporte"
 
 ## PC prueba
@@ -52,7 +51,7 @@ REMOTE_USER="Soporte"
 # REMOTE_USER="Inf2"
 
 ## PC home
-REMOTE_HOST="192.168.0.198"
+# REMOTE_HOST="192.168.0.198"
 
 REMOTE_DESK="Desktop/$BACKUP_DIR/"
 
