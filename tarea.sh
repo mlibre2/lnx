@@ -24,8 +24,6 @@ unset PGPASSWORD
 ## Simulaciion del respaldo para pruebas....
 # echo "prueba ${TIMESTAMP}" > "${BACKUP_FILE}"
 
-ENCRYPTED_FILE="${BACKUP_FILE}.gz.gpg"
-
 ## Clave autogenerada con encriptado OpenSSL para abrir archivos GPG
 ##
 ## Para desencriptar directamente en Debian usar el sig. comando:
@@ -37,6 +35,9 @@ ENCRYPTED_FILE="${BACKUP_FILE}.gz.gpg"
 ## Nota: el archivo "pass_gz.txt" es donde esta la clave para desencriptar
 ##
 PASS_FILE="pass_gz.txt"
+
+## Nombre del archivo encriptado
+ENCRYPTED_FILE="${BACKUP_FILE}.gz.gpg"
 
 ## Variable global para control de ejecución (habilitar envio de archivos "encriptados" a windows)
 EXECUTE_TRANSFER=true
@@ -53,10 +54,20 @@ REMOTE_USER="Soporte"
 ## PC home
 # REMOTE_HOST="192.168.0.198"
 
-REMOTE_DESK="Desktop/$BACKUP_DIR/"
+## Letra del disco local por defecto
+REMOTE_DISK_LETTER="C"
 
-REMOTE_PATH="/C:/Users/$REMOTE_USER/$REMOTE_DESK"
-# REMOTE_PATH="/E:/$REMOTE_USER/$REMOTE_DESK"
+## Letra del disco local personalizado
+# REMOTE_DISK_LETTER="E"
+
+## Carpeta del usuario (Escritorio=Desktop - Documentos=Documents)
+REMOTE_FILE_DIR="Desktop"
+
+## Ruta por defecto
+REMOTE_PATH="$REMOTE_DISK_LETTER:/Users/$REMOTE_USER/$REMOTE_FILE_DIR"
+
+## Ruta personalizada
+# REMOTE_PATH="$REMOTE_DISK_LETTER:/$REMOTE_USER/$REMOTE_FILE_DIR"
 
 ## Generar manualmente con la clave del usuario windows (se borra una vez encriptada)
 WINDOWS_PASS_FILE="pass_win.txt"
@@ -242,30 +253,29 @@ fi
 
 ## Transferir archivo solo si todas las dependencias están OK
 if $EXECUTE_TRANSFER; then
-    log "Iniciando transferencia a ${REMOTE_USER}@${REMOTE_HOST}..."
+    log "Iniciando transferencia a $REMOTE_USER@$REMOTE_HOST ..."
     
     ## Primero verificar si el directorio remoto existe, si no existe, crearlo
     if ! sshpass -p "$windows_password" ssh -o StrictHostKeyChecking=no \
                                           -o ConnectTimeout=10 \
                                           "${REMOTE_USER}@${REMOTE_HOST}" \
-                                          "if not exist \"${REMOTE_DESK}\" mkdir \"${REMOTE_DESK}\"" >> "$LOG_FILE" 2>&1; then
+                                          "if not exist \"$REMOTE_PATH\\$BACKUP_DIR\" mkdir \"$REMOTE_PATH\\$BACKUP_DIR\"" >> "$LOG_FILE" 2>&1; then
         EXECUTE_TRANSFER=false
-        log "ERROR: No se pudo verificar/crear el directorio remoto ${REMOTE_DESK}"
-        #exit 1
+        log "ERROR: No se pudo verificar/crear el directorio remoto $REMOTE_PATH/$BACKUP_DIR"
     else
-        log "Directorio remoto verificado/creado correctamente: ${REMOTE_DESK}"
+        log "Directorio remoto verificado/creado correctamente: $REMOTE_PATH/$BACKUP_DIR"
     fi
     
     ## Luego realizar la transferencia
     if ! sshpass -p "$windows_password" scp -o StrictHostKeyChecking=no \
                                            -o ConnectTimeout=10 \
                                            "$ENCRYPTED_FILE" \
-                                           "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}" >> "$LOG_FILE" 2>&1; then
+                                           "${REMOTE_USER}@${REMOTE_HOST}:/$REMOTE_PATH/$BACKUP_DIR" >> "$LOG_FILE" 2>&1; then
         EXECUTE_TRANSFER=false
         log "ERROR: Falló la transferencia del archivo"
         #exit 1
     else
-        log "Transferencia completada exitosamente a ${REMOTE_HOST}:${REMOTE_PATH}"
+        log "Transferencia completada exitosamente a $REMOTE_PATH/$BACKUP_DIR"
     fi
 else
     EXECUTE_TRANSFER=false
