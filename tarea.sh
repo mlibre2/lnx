@@ -3,20 +3,22 @@
 ## Configuración de la BD (Modificar estos valores).
 DB_NAME="kavac" # Nombre de la BD a respaldar.
 DB_OWNER="kavac" # Dueño de la BD.
-DB_PASSWORD="XXX" # Contraseña de la BD.
+DB_PASSWORD="tiocpeHaknoyromJocBo" # Contraseña de la BD.
 
-## Ruta donde se guardan los archivos encriptados sql
+## Directorio donde se guardan archivos encriptados sql.gz.gpg
 BACKUP_DIR="bak_postgres"
 
+## Configuración de rotación de backups (días para conservar localmente)
+ROTATION_DAYS=30  # Conservar backups por 30 días
+
 ## Generar nombre del archivo con fecha y hora actuales
-TIMESTAMP=$(date +"%d%m%Y_%H%M%S")
+TIMESTAMP=$(date +"%d-%m-%Y_%H%M%S")
 BACKUP_FILE="${DB_NAME}_${TIMESTAMP}.sql"
 
 ## Realizar el respaldo de la BD.
 # export PGPASSWORD="$DB_PASSWORD"
 echo "Respaldando la base de datos '$DB_NAME'..."
 # pg_dump -U "$DB_OWNER" -h 127.0.0.1 --no-owner --no-acl "$DB_NAME" > "$BACKUP_FILE"
-
 # unset PGPASSWORD
 
 ## Simulaciion del respaldo para pruebas....
@@ -40,17 +42,16 @@ PASS_FILE="pass_gz.txt"
 ## Variable global para control de ejecución (habilitar envio de archivos "encriptados" a windows)
 EXECUTE_TRANSFER=true
 
-## Acceso remoto a Windows (requerido OpenSSH-Win32...)
-REMOTE_USER="Soporte"
-# REMOTE_USER="Inf2"
-
+## Acceso remoto a Windows (requerido OpenSSH-Win...)
 ## PC production
 # REMOTE_HOST="172.168.1.3"
+REMOTE_USER="Soporte"
 
-## PC Inf2
+## PC prueba
 # REMOTE_HOST="172.168.1.50"
+# REMOTE_USER="Inf2"
 
-## PC Home
+## PC home
 REMOTE_HOST="192.168.0.198"
 
 REMOTE_DESK="Desktop/$BACKUP_DIR/"
@@ -65,11 +66,28 @@ WINDOWS_PASS_FILE="pass_win.txt"
 ENCRYPTED_WINDOWS_PASS="pass_win.enc"
 
 ## Todos los procesos se registran aqui
-LOG_FILE="secure_backup.log"
+LOG_DIR="registros"
+LOG_FILE="$LOG_DIR/$(date +"%d-%m-%Y").log"
+
+## Crear el directorio si no existe
+mkdir -p "$LOG_DIR"
 
 ## Función para registrar eventos
 log() {
-    echo "[$(date '+%d-%m-%Y %H:%M:%S')] $1" >> "$LOG_FILE"
+    echo "[$(date '+%H:%M:%S')] $1" >> "$LOG_FILE"
+}
+
+## Función para rotar backups antiguos
+rotate_old_backups() {
+    log "Iniciando rotación de backups antiguos (más de $ROTATION_DAYS días)..."
+    
+    ## Rotación local
+    if [ -d "$BACKUP_DIR" ]; then
+        find "$BACKUP_DIR" -name "${DB_NAME}_*.sql.gz.gpg" -type f -mtime +$ROTATION_DAYS -exec rm -v {} \; >> "$LOG_FILE" 2>&1
+        log "Rotación local completada"
+    else
+        log "No se encontró directorio local $BACKUP_DIR para rotación"
+    fi
 }
 
 ## Función para manejar la contraseña de Windows
@@ -257,6 +275,9 @@ fi
 
 ## Mover backup local y limpiar
 chk_dir_backups_move
+
+## Rotar backups antiguos
+rotate_old_backups
 
 log "Proceso completado exitosamente"
 log "------------------------------------------------"
