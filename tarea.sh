@@ -35,7 +35,7 @@ fi
 ## Para desencriptar directamente en Debian usar el sig. comando:
 ##
 # gpg --batch --pinentry-mode loopback --passphrase-fd 3 -d nameFile.sql.gz.gpg 3<pass_gz.txt | gunzip - > nameFile.sql
-#
+##
 ## En caso de abrirlo en windows es requerido el programa "gpg4win"
 ##
 ## Nota: el archivo "pass_gz.txt" es donde esta la clave para desencriptar
@@ -97,21 +97,21 @@ log() {
 rotate_old_backups() {
     log "Iniciando rotación de backups/logs antiguos (más de $ROTATION_DAYS días)..."
     
-    ## Rotación local
-    if [ -d "$BACKUP_DIR" ]; then
-        find "$BACKUP_DIR" -name "${DB_NAME}_*.sql.gz.gpg" -type f -mtime +$ROTATION_DAYS -exec rm -v {} \; >> "$LOG_FILE" 2>&1
-        log "Rotación local completada $BACKUP_DIR"
-    else
-        log "No se encontró directorio local $BACKUP_DIR para rotación"
-    fi
-
-    ## Rotación logs
-    if [ -d "$LOG_DIR" ]; then
-        find "$LOG_DIR" -name "*.log" -type f -mtime +$ROTATION_DAYS -exec rm -v {} \; >> "$LOG_FILE" 2>&1
-        log "Rotación local completada $LOG_DIR"
-    else
-        log "No se encontró directorio local $LOG_DIR para rotación"
-    fi
+    # Array con directorios y patrones de archivos a rotar
+    declare -A rotate_paths=(
+        ["$BACKUP_DIR"]="${DB_NAME}_*.sql.gz.gpg"
+        ["$LOG_DIR"]="*.log"
+    )
+    
+    for dir in "${!rotate_paths[@]}"; do
+        if [ -d "$dir" ]; then
+            find "$dir" -name "${rotate_paths[$dir]}" -type f -mtime +$ROTATION_DAYS \
+                -exec rm -v {} \; >> "$LOG_FILE" 2>&1
+            log "Rotación completada en $dir"
+        else
+            log "No se encontró directorio $dir para rotación"
+        fi
+    done
 }
 
 ## Función para manejar la contraseña de Windows
@@ -195,6 +195,7 @@ chk_dir_backups_move() {
     
     ## Mover el archivo
     mv "$ENCRYPTED_FILE" "$BACKUP_DIR/"
+
     ## Verificar si el movimiento fue exitoso
     if [ $? -eq 0 ]; then
         log "El archivo $ENCRYPTED_FILE se movió correctamente a $BACKUP_DIR"
@@ -204,15 +205,12 @@ chk_dir_backups_move() {
     fi
 
     ## Eliminar archivos vulnerables solo si existen
-    if [ -f "$BACKUP_FILE" ]; then
-        rm "$BACKUP_FILE"
-        log "Se elimino $BACKUP_FILE"
-    fi
-
-    if [ -f "$WINDOWS_PASS_FILE" ]; then
-        rm "$WINDOWS_PASS_FILE"
-        log "Se elimino $WINDOWS_PASS_FILE"
-    fi
+    for file in "$BACKUP_FILE" "$WINDOWS_PASS_FILE"; do
+        if [ -f "$file" ]; then
+            rm "$file"
+            log "Se eliminó $file"
+        fi
+    done
     return 0
 }
 
