@@ -10,10 +10,11 @@
 
 Include /etc/ssh/sshd_config.d/*.conf
 
-#Port 22
+Port 22
 #AddressFamily any
 #ListenAddress 0.0.0.0
 #ListenAddress ::
+ListenAddress 172.168.1.195
 
 #HostKey /etc/ssh/ssh_host_rsa_key
 #HostKey /etc/ssh/ssh_host_ecdsa_key
@@ -28,9 +29,9 @@ Include /etc/ssh/sshd_config.d/*.conf
 
 # Authentication:
 
-#LoginGraceTime 2m
-#PermitRootLogin prohibit-password
-#StrictModes yes
+LoginGraceTime 120
+PermitRootLogin no
+StrictModes yes
 #MaxAuthTries 6
 #MaxSessions 10
 
@@ -82,6 +83,7 @@ KbdInteractiveAuthentication no
 # PAM authentication, then enable this but set PasswordAuthentication
 # and KbdInteractiveAuthentication to 'no'.
 UsePAM yes
+AllowUsers user@172.168.1.50
 
 #AllowAgentForwarding yes
 #AllowTcpForwarding yes
