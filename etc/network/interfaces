@@ -4,12 +4,18 @@
 source /etc/network/interfaces.d/*
 
 # The loopback network interface
-auto lo
-iface lo inet loopback
+#auto lo
+#iface lo inet loopback
 
 # The primary network interface
-allow-hotplug enp0s3
-iface enp0s3 inet dhcp
-
+#allow-hotplug enp0s3
+#iface enp0s3 inet dhcp
 # This is an autoconfigured IPv6 interface
-iface enp0s3 inet6 auto
+#iface enp0s3 inet6 auto
+
+auto enp0s3
+iface enp0s3 inet static
+    address 172.168.1.195
+    netmask 255.255.255.0
+    gateway 172.168.1.1
+    dns-nameservers 94.140.14.14 94.140.15.15
